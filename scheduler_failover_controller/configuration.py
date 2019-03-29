@@ -16,6 +16,7 @@ DEFAULT_LOGS_ROTATE_WHEN = "midnight"
 DEFAULT_LOGS_ROTATE_BACKUP_COUNT = 7
 DEFAULT_RETRY_COUNT_BEFORE_ALERTING = 5
 DEFAULT_ALERT_EMAIL_SUBJECT = "Airflow Alert - Scheduler Failover Controller Failed to Startup Scheduler"
+DEFAULT_STATSD_ON = False
 
 DEFAULT_SCHEDULER_FAILOVER_CONTROLLER_CONFIGS = """
 [scheduler_failover]
@@ -110,6 +111,9 @@ class Configuration:
     def get_smtp_config(self, option, default=None):
         return self.get_config("smtp", option, default)
 
+    def get_scheduler_config(self, option, default=None):
+        return self.get_config("scheduler", option, default)
+
     def get_logging_level(self):
         return logging.getLevelName(self.get_scheduler_failover_config("LOGGING_LEVEL", DEFAULT_LOGGING_LEVEL))
 
@@ -177,6 +181,18 @@ class Configuration:
 
     def get_alert_email_subject(self):
         return self.get_scheduler_failover_config("ALERT_EMAIL_SUBJECT", DEFAULT_ALERT_EMAIL_SUBJECT)
+
+    def get_airflow_statsd_on(self):
+        return self.get_scheduler_config("STATSD_ON", DEFAULT_STATSD_ON)
+
+    def get_airflow_statsd_host(self):
+        return self.get_scheduler_config("STATSD_HOST")
+
+    def get_airflow_statsd_port(self):
+        return self.get_scheduler_config("STATSD_PORT")
+
+    def get_airflow_statsd_prefix(self):
+        return self.get_scheduler_config("STATSD_PREFIX")
 
     def add_default_scheduler_failover_configs_to_airflow_configs(self):
         with open(self.airflow_config_file_path, 'r') as airflow_config_file:

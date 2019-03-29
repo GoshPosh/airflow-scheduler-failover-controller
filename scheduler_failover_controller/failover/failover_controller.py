@@ -13,7 +13,7 @@ class FailoverController:
     LATEST_FAILED_START_MESSAGE = None
     LATEST_FAILED_SHUTDOWN_MESSAGE = None
 
-    def __init__(self, configuration, command_runner, metadata_service, emailer, logger):
+    def __init__(self, configuration, command_runner, metadata_service, emailer, logger, stats):
         logger.debug("Creating CommandRunner with Args - configuration: {configuration}, command_runner: {command_runner}, metadata_service: {metadata_service}, emailer: {emailer}, logger: {logger}".format(**locals()))
         self.current_host = configuration.get_current_host()
         self.scheduler_nodes_in_cluster = configuration.get_scheduler_nodes_in_cluster()
@@ -25,6 +25,7 @@ class FailoverController:
         self.metadata_service = metadata_service
         self.emailer = emailer
         self.logger = logger
+        self.stats = stats
 
     def poll(self):
         self.logger.info("--------------------------------------")
@@ -151,17 +152,33 @@ class FailoverController:
         self.LATEST_FAILED_STATUS_MESSAGE = output
         if is_successful:
             active_list = []
+            active_parent_schedulers = []
             for line in output:
                 if line.strip() != "" and process_check_command not in line and grep_command not in line and grep_command_no_quotes not in line and full_status_check_command not in line:
                     active_list.append(line)
+                    line_split = line.split()
+                    # Not adding parent id for root process which will be 1 always.
+                    if len(line_split) > 3:
+                        if line_split[2] != '1':
+                            active_parent_schedulers.append(line_split[2])
+                        else:
+                            active_parent_schedulers.append(line_split[1])
 
-            active_list_length = len(filter(None, active_list))
+            active_parent_schedulers = list(set(active_parent_schedulers))
+            if len(active_parent_schedulers) > 1:
+                self.logger.warning("There are multiple Scheduler running on node '" + host + "'. Shutting Down those Schedulers." + str(active_parent_schedulers))
+                self.shutdown_scheduler(host)
+                self.stats.increment('sfc.scheduler_check.multiple_processes', 1, 1)
+            else:
+                active_list_length = len(filter(None, active_list))
+                is_running = active_list_length > 0
 
-            # todo: If there's more then one scheduler running this should kill off the other schedulers. MIGHT ALREADY BE HANDLED. DOUBLE CHECK.
-
-            is_running = active_list_length > 0
+            if len(active_parent_schedulers) == 0:
+                self.logger.warning("is_scheduler_running couldn't get process id for scheduler")
+            self.stats.increment('sfc.scheduler_check.successes', 1, 1)
         else:
             self.logger.critical("is_scheduler_running check failed")
+            self.stats.increment('sfc.scheduler_check.failures', 1, 1)
 
         self.logger.info("Finished Checking if Scheduler on host '" + str(host) + "' is running. is_running: " + str(is_running))
 

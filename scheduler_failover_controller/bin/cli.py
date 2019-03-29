@@ -5,6 +5,7 @@ from scheduler_failover_controller.configuration import Configuration
 from scheduler_failover_controller.emailer.emailer import Emailer
 from scheduler_failover_controller.failover.failover_controller import FailoverController
 from scheduler_failover_controller.logger.logger import get_logger
+from scheduler_failover_controller.logger.stats import Stats
 from scheduler_failover_controller.app import main
 import scheduler_failover_controller
 import argparse
@@ -30,7 +31,8 @@ def get_all_scheduler_failover_controller_objects():
         command_runner=command_runner,
         metadata_service=metadata_service,
         emailer=emailer,
-        logger=logger
+        logger=logger,
+        stats=Stats(configuration, logger)
     )
     return scheduler_nodes_in_cluster, poll_frequency, metadata_service, emailer, failover_controller
 

@@ -15,6 +15,7 @@ setup(
         'kazoo>=2.2.1',
         'coverage>=4.2',
         'eventlet>=0.9.7',
+        'statsd>=3.0.1, <4.0'
     ],
     extras_require={},
     author='Robert Sanders',
