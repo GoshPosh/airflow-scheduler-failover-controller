@@ -17,6 +17,7 @@ DEFAULT_LOGS_ROTATE_BACKUP_COUNT = 7
 DEFAULT_RETRY_COUNT_BEFORE_ALERTING = 5
 DEFAULT_ALERT_EMAIL_SUBJECT = "Airflow Alert - Scheduler Failover Controller Failed to Startup Scheduler"
 DEFAULT_STATSD_ON = False
+DEFAULT_DISABLE_SCHEDULER_SHUTDOWN = False
 
 DEFAULT_SCHEDULER_FAILOVER_CONTROLLER_CONFIGS = """
 [scheduler_failover]
@@ -66,6 +67,9 @@ alert_to_email = airflow@airflow.com
 
 # Email Subject to use when sending an alert
 alert_email_subject = """ + str(DEFAULT_ALERT_EMAIL_SUBJECT) + """
+
+# enable/disable scheduler shutdown, if more than one scheduler found on same node
+disable_scheduler_shutdown = """ + str(DEFAULT_DISABLE_SCHEDULER_SHUTDOWN) + """
 
 """
 
@@ -145,6 +149,9 @@ class Configuration:
 
     def get_airflow_scheduler_stop_command(self):
         return self.get_scheduler_failover_config("AIRFLOW_SCHEDULER_STOP_COMMAND").replace("\\;", ";")
+
+    def get_disable_scheduler_shutdown(self):
+        return self.get_scheduler_failover_config("DISABLE_SCHEDULER_SHUTDOWN", DEFAULT_DISABLE_SCHEDULER_SHUTDOWN)
 
     def get_airflow_smtp_host(self):
         return self.get_smtp_config("SMTP_HOST")

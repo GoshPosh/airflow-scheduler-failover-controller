@@ -21,6 +21,7 @@ class FailoverController:
         self.airflow_scheduler_stop_command = configuration.get_airflow_scheduler_stop_command()
         self.poll_frequency = configuration.get_poll_frequency()
         self.retry_count_before_alerting = configuration.get_retry_count_before_alerting()
+        self.disable_scheduler_shutdown = configuration.get_disable_scheduler_shutdown()
         self.command_runner = command_runner
         self.metadata_service = metadata_service
         self.emailer = emailer
@@ -166,8 +167,10 @@ class FailoverController:
 
             active_parent_schedulers = list(set(active_parent_schedulers))
             if len(active_parent_schedulers) > 1:
-                self.logger.warning("There are multiple Scheduler running on node '" + host + "'. Shutting Down those Schedulers." + str(active_parent_schedulers))
-                self.shutdown_scheduler(host)
+                self.logger.warning("There are multiple Scheduler running on node '" + host + "'.")
+                if self.disable_scheduler_shutdown:
+                    self.logger.warning("Shutting Down those Schedulers." + str(active_parent_schedulers))
+                    self.shutdown_scheduler(host)
                 self.stats.increment('sfc.scheduler_check.multiple_processes', 1, 1)
             else:
                 active_list_length = len(filter(None, active_list))
